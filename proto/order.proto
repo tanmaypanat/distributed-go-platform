@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package order;
+option go_package = "github.com/tanmaypanat/distributed-go-platform/proto;proto";
+
+// The service definition
+service OrderService {
+  // Fetch an order by ID
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+}
+
+// The request message
+message GetOrderRequest {
+  string id = 1;
+}
+
+// The response message
+message GetOrderResponse {
+  string id = 1;
+  string description = 2;
+}

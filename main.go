@@ -27,7 +27,7 @@ func main() {
 		}
 
 		// Call gRPC server to get order details
-		resp, err := grpc_client.GetOrder("1423")
+		resp, err := grpc_client.GetOrder(order_id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch orders"})
 			return

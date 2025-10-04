@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"context"
@@ -19,7 +19,7 @@ func main() {
 
 	client := pd.NewOrderServiceClient(conn)
 
-	req := &pd.GetOrderRequest{Id: "145"}
+	req := &pd.GetOrderRequest{Id: "1423"}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

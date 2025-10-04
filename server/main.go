@@ -2,39 +2,49 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 
-	pd "github.com/tanmaypanat/distributed-go-platform/proto"
+	pb "github.com/tanmaypanat/distributed-go-platform/proto"
 	"google.golang.org/grpc"
 )
 
 type server struct {
-	pd.UnimplementedOrderServiceServer
+	pb.UnimplementedOrderServiceServer
 }
 
-func (s *server) GetOrder(ctx context.Context, req *pd.GetOrderRequest) (*pd.GetOrderResponse, error) {
-	log.Printf("Recieved order request with id: %s", req.GetId())
+func (s *server) GetOrder(ctx context.Context, req *pb.GetOrderRequest) (*pb.GetOrderResponse, error) {
+	orderID := req.GetId()
+	description := "Order for " + orderID
 
-	return &pd.GetOrderResponse{
-		Id:          req.GetId(),
-		Description: fmt.Sprintf("Order with id %s is a test order", req.GetId()),
-	}, nil
+	// Create a response channel for this request
+	respCh := make(chan *pb.GetOrderResponse)
+
+	pendingRequests.Lock()
+	pendingRequests.requests[orderID] = respCh
+	pendingRequests.Unlock()
+
+	// Produce to Kafka
+	produceOrder(orderID, description)
+
+	// Wait for response from Kafka consumer
+	resp := <-respCh
+	return resp, nil
 }
 
 func main() {
+	initKafka()
+
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+		log.Fatalf("failed to listen: %v", err)
 	}
 
 	grpcServer := grpc.NewServer()
-	pd.RegisterOrderServiceServer(grpcServer, &server{})
+	pb.RegisterOrderServiceServer(grpcServer, &server{})
 
-	log.Println("Starting gRPC server on port 50051...")
+	log.Println("Starting gRPC server on :50051")
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
+		log.Fatalf("failed to serve: %v", err)
 	}
-
 }
